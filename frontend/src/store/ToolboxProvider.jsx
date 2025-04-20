@@ -25,6 +25,9 @@ function toolboxReducer(state, action) {
     }
 }
 const initialToolboxState = {
+    [TOOL_ITEMS.BRUSH]: {
+        stroke: COLORS.BLACK,
+      },
     [TOOL_ITEMS.LINE]: {
         stroke: COLORS.BLACK,
         size: 1,
@@ -43,6 +46,10 @@ const initialToolboxState = {
         stroke: COLORS.BLACK,
         size: 1,
     },
+    [TOOL_ITEMS.TEXT]: {
+        stroke: COLORS.BLACK,
+        size: 32,
+      },
 };
 
 function ToolboxProvider({ children }) {
