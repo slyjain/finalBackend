@@ -21,30 +21,27 @@ const Toolbox = () => {
 
   return (
     <div
-      className="absolute top-1/2 left-5 text-sm border border-gray-400 bg-white p-4 rounded shadow-md"
+      className="absolute top-1/2 left-5 text-sm px-5 py-4 rounded-2xl shadow-lg border border-gray-600 bg-white/10 backdrop-blur-md text-white space-y-6 z-50"
       style={{ transform: "translateY(-50%)" }}
     >
+      {/* Stroke */}
       {STROKE_TOOL_TYPES.includes(activeToolItem) && (
-        <div className="mb-6 first:pt-5 last:pb-5 px-4">
-          <div className="block mb-1 font-medium">Stroke</div>
-          <div className="flex flex-wrap items-center">
-            <div className="mr-2">
-              <input
-                type="color"
-                value={strokeColor}
-                onChange={(e) => changeStroke(activeToolItem, e.target.value)}
-                className="w-6 h-6 p-0 border-none cursor-pointer"
-                title="Pick stroke color"
-              />
-            </div>
-
+        <div>
+          <div className="block mb-2 font-semibold">Stroke</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="color"
+              value={strokeColor}
+              onChange={(e) => changeStroke(activeToolItem, e.target.value)}
+              className="w-6 h-6 rounded-full border-none cursor-pointer"
+              title="Pick stroke color"
+            />
             {Object.keys(COLORS).map((k) => (
               <div
                 key={k}
                 className={clsx(
-                  "inline-block w-5 h-5 rounded mr-1 last:mr-0 cursor-pointer",
-                  strokeColor === COLORS[k] &&
-                  "border border-gray-300 shadow-[0_0_0_1px_#4a47b1]"
+                  "inline-block w-5 h-5 rounded-full border border-white/20 cursor-pointer transition hover:scale-110",
+                  strokeColor === COLORS[k] && "ring-2 ring-blue-400"
                 )}
                 style={{ backgroundColor: COLORS[k] }}
                 onClick={() => changeStroke(activeToolItem, COLORS[k])}
@@ -54,42 +51,39 @@ const Toolbox = () => {
         </div>
       )}
 
+      {/* Fill */}
       {FILL_TOOL_TYPES.includes(activeToolItem) && (
-        <div className="mb-6 last:mb-0 first:pt-5 last:pb-5 px-4">
-          <div className="block mb-1 font-medium">Fill Color</div>
-          <div className="flex flex-wrap items-center">
-            {/* Fill color picker and "no fill" toggle */}
+        <div>
+          <div className="block mb-2 font-semibold">Fill</div>
+          <div className="flex flex-wrap items-center gap-2">
             {fillColor === null ? (
               <div
-                className={clsx(
-                  "w-6 h-6 border border-gray-300 bg-white flex items-center justify-center cursor-pointer mr-2",
-                  "after:content-[''] after:w-4 after:h-0.5 after:bg-red-500 after:rotate-45 after:absolute"
-                )}
+                className="w-6 h-6 border border-white/20 bg-transparent flex items-center justify-center cursor-pointer relative rounded hover:scale-110"
                 onClick={() => changeFill(activeToolItem, COLORS.BLACK)}
                 title="Use fill"
-              ></div>
-            ) : (
-              <div className="mr-2">
-                <input
-                  type="color"
-                  value={fillColor}
-                  onChange={(e) => changeFill(activeToolItem, e.target.value)}
-                  className="w-6 h-6 p-0 border-0 cursor-pointer"
-                  title="Pick fill color"
-                />
+              >
+                <div className="absolute left-0 top-1/2 w-full h-0.5 bg-red-500 rotate-45" />
               </div>
+            ) : (
+              <input
+                type="color"
+                value={fillColor}
+                onChange={(e) => changeFill(activeToolItem, e.target.value)}
+                className="w-6 h-6 rounded-full border-none cursor-pointer"
+                title="Pick fill color"
+              />
             )}
 
             <div
               className={clsx(
-                "w-6 h-6 border border-gray-300 bg-white flex items-center justify-center cursor-pointer mr-2",
-                fillColor === null && "shadow-[0_0_0_2px_#4a47b1]"
+                "w-6 h-6 border border-white/20 bg-transparent flex items-center justify-center cursor-pointer relative rounded hover:scale-110",
+                fillColor === null && "ring-2 ring-blue-400"
               )}
               onClick={() => changeFill(activeToolItem, null)}
               title="No fill"
             >
-              <div className="w-4 h-4 bg-gray-300 relative">
-                <div className="absolute left-0 top-1/2 w-full h-0.5 bg-red-600 rotate-45"></div>
+              <div className="w-4 h-4 bg-gray-400 relative">
+                <div className="absolute left-0 top-1/2 w-full h-0.5 bg-red-600 rotate-45" />
               </div>
             </div>
 
@@ -97,9 +91,8 @@ const Toolbox = () => {
               <div
                 key={k}
                 className={clsx(
-                  "inline-block w-5 h-5 rounded mr-1 last:mr-0 cursor-pointer",
-                  fillColor === COLORS[k] &&
-                  "border border-gray-300 shadow-[0_0_0_1px_#4a47b1]"
+                  "inline-block w-5 h-5 rounded-full border border-white/20 cursor-pointer transition hover:scale-110",
+                  fillColor === COLORS[k] && "ring-2 ring-blue-400"
                 )}
                 style={{ backgroundColor: COLORS[k] }}
                 onClick={() => changeFill(activeToolItem, COLORS[k])}
@@ -109,23 +102,20 @@ const Toolbox = () => {
         </div>
       )}
 
+      {/* Size */}
       {SIZE_TOOL_TYPES.includes(activeToolItem) && (
-        <div className="mb-6 last:mb-0 first:pt-5 last:pb-5 px-4">
-          <div className={activeToolItem === TOOL_ITEMS.TEXT ? "block mb-1" : "block mb-1"}>
+        <div>
+          <div className="block mb-2 font-semibold">
             {activeToolItem === TOOL_ITEMS.TEXT ? "Font Size" : "Brush Size"}
           </div>
-
           <input
             type="range"
             min={activeToolItem === TOOL_ITEMS.TEXT ? 12 : 1}
             max={activeToolItem === TOOL_ITEMS.TEXT ? 64 : 10}
-
             step={1}
             value={size}
-            onChange={(event) =>
-              changeSize(activeToolItem, event.target.value)
-            }
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            onChange={(e) => changeSize(activeToolItem, e.target.value)}
+            className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
           />
         </div>
       )}

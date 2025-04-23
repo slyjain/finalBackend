@@ -7,7 +7,7 @@ import boardContext from "../../store/board-context";
 function Board() {
     const canvasRef = useRef();
     const textAreaRef = useRef();
-    const { elements, boardMouseDownHandler, boardMouseMoveHandler, boardMouseUpHandler, toolActionType, textAreaBlurHandler, undo,redo} = useContext(boardContext);
+    const { elements, boardMouseDownHandler, boardMouseMoveHandler, boardMouseUpHandler, toolActionType, textAreaBlurHandler, undo, redo } = useContext(boardContext);
     const { toolboxState } = useContext(toolboxContext);
     useLayoutEffect(() => {
         const canvas = canvasRef.current;
@@ -17,19 +17,19 @@ function Board() {
     }, []);
     useEffect(() => {
         function handleKeyDown(event) {
-          if (event.ctrlKey && event.key === "z") {
-            undo();
-          } else if (event.ctrlKey && event.key === "y") {
-            redo();
-          }
+            if (event.ctrlKey && event.key === "z") {
+                undo();
+            } else if (event.ctrlKey && event.key === "y") {
+                redo();
+            }
         }
-    
+
         document.addEventListener("keydown", handleKeyDown);
-    
+
         return () => {
-          document.removeEventListener("keydown", handleKeyDown);
+            document.removeEventListener("keydown", handleKeyDown);
         };
-      }, [undo, redo]);
+    }, [undo, redo]);
     useEffect(() => {
         const canvas = canvasRef.current;
         const context = canvas.getContext("2d");
@@ -105,6 +105,7 @@ function Board() {
                 ref={canvasRef}
                 width={window.innerWidth}
                 height={window.innerHeight}
+                style={{ backgroundColor: "#1c1c1e" }}
                 onMouseDown={handleBoardMouseDown}
                 onMouseUp={handleBoardMouseUp}
                 onMouseMove={handleBoardMouseMove}
