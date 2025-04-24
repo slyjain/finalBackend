@@ -59,7 +59,7 @@ export const TOOL_ITEMS = {
     TOOL_ITEMS.CIRCLE,
     TOOL_ITEMS.TEXT,
   ];
-  
+  export const BASE_URL="http://localhost:8000"
   export const ARROW_LENGTH = 20;
   export const ELEMENT_ERASE_THRESHOLD = 0.1;
   
