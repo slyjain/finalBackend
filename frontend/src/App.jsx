@@ -4,16 +4,17 @@ import Toolbar from "./components/Toolbar";
 import BoardProvider from "./store/BoardProvider";
 import ToolboxProvider from "./store/ToolboxProvider";
 import Toolbox from "./components/Toolbox";
+import { useEffect, useState } from "react";
 import Login from "./components/Login";
 import DashBoard from "./components/Dashboard";
-import { useEffect, useState } from "react";
 import { useContext } from "react";
-import {AuthContext }from "./store/authProvider";
+import { AuthContext } from "./store/authProvider";
+import CanvasPage from "./components/CanvasPage";
 
 function App() {
-  const {token,setToken}=useContext(AuthContext)
+  const { token, setToken } = useContext(AuthContext)
 
-  
+
 
   return (
     <>
@@ -26,20 +27,13 @@ function App() {
           />
           {/* Login route should only be accessible when not logged in */}
           <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
+          <Route path="/load/:canvasId" element={<CanvasPage />} />
 
         </Routes>
       </Router>
 
       {/* Optional: Protected components only accessible when logged in */}
-      {0 && (
-        <BoardProvider>
-          <ToolboxProvider>
-            <Toolbar />
-            <Toolbox />
-            <Board />
-          </ToolboxProvider>
-        </BoardProvider>
-      )}
+
     </>
   );
 }

@@ -3,16 +3,19 @@ import rough from "roughjs";
 import { TOOL_ACTION_TYPES, TOOL_ITEMS } from "../../constants"
 import toolboxContext from "../../store/toolbox-context";
 import boardContext from "../../store/board-context";
+import { updateCanvas } from "../../utils/api";
+import { AuthContext } from "../../store/authProvider";
 
 function Board() {
     const canvasRef = useRef();
     const textAreaRef = useRef();
     const { elements, boardMouseDownHandler, boardMouseMoveHandler, boardMouseUpHandler, toolActionType, textAreaBlurHandler, undo, redo } = useContext(boardContext);
     const { toolboxState } = useContext(toolboxContext);
+    const { token} = useContext(AuthContext);
     useLayoutEffect(() => {
         const canvas = canvasRef.current;
-        const context = canvas.getContext("2d");
-        const roughCanvas = rough.canvas(canvas);
+        // const context = canvas.getContext("2d");
+        // const roughCanvas = rough.canvas(canvas);
 
     }, []);
     useEffect(() => {
@@ -76,6 +79,9 @@ function Board() {
         boardMouseDownHandler(event, toolboxState);
     };
     const handleBoardMouseUp = (event) => {
+        const canvasId=localStorage.getItem("canvasId")
+        console.log(token,canvasId)
+        updateCanvas(canvasId, elements, token);
         boardMouseUpHandler();
     }
     const handleBoardMouseMove = (event) => {
@@ -113,5 +119,5 @@ function Board() {
         </>
     );
 }
-
+export const useBoard = () => useContext(boardContext);
 export default Board;

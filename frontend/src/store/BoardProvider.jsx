@@ -1,4 +1,6 @@
-import React, { useCallback, useReducer } from 'react';
+import React, { useCallback, useReducer, useEffect,useContext } from 'react';
+import { AuthContext } from './authProvider';
+
 import boardContext from './board-context';
 import { BOARD_ACTIONS, TOOL_ACTION_TYPES, TOOL_ITEMS } from '../constants';
 import {
@@ -7,6 +9,7 @@ import {
   isPointNearElement,
 } from '../utils/element';
 import getStroke from 'perfect-freehand';
+import { updateCanvas } from '../utils/api';
 
 const boardReducer = (state, action) => {
   switch (action.type) {
@@ -153,12 +156,29 @@ const initialBoardState = {
   index: 0,
 };
 
-const BoardProvider = ({ children }) => {
+const BoardProvider = ({ children, initialElements = [] }) => {
+  const { token } = useContext(AuthContext);
+  const canvasId = localStorage.getItem("canvasId");
   const [boardState, dispatchBoardAction] = useReducer(
     boardReducer,
-    initialBoardState
+    {
+      ...initialBoardState,
+      elements: initialElements,
+      history: [initialElements],
+      index: 0,
+    }
   );
 
+  // Debounce and sync to backend after undo/redo or any changes
+  useEffect(() => {
+    if (!canvasId || !token) return;
+
+    const debounce = setTimeout(() => {
+      updateCanvas(canvasId, boardState.elements, token);
+    }, 800); // adjust debounce time if needed
+
+    return () => clearTimeout(debounce);
+  }, [boardState.elements, canvasId, token]);
   const changeToolHandler = (tool) => {
     dispatchBoardAction({
       type: BOARD_ACTIONS.CHANGE_TOOL,
@@ -241,6 +261,7 @@ const BoardProvider = ({ children }) => {
     });
   };
   const boardContextValue = {
+
     activeToolItem: boardState.activeToolItem,
     elements: boardState.elements,
     toolActionType: boardState.toolActionType,

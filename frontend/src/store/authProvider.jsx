@@ -8,8 +8,8 @@ export const AuthContext = createContext({
 
 export function AuthProvider({ children }) {
     const [token, setToken] = useState(localStorage.getItem("token") || null);
-    const authContextValue={
-        token,setToken
+    const authContextValue = {
+        token, setToken
     }
     return (
 
