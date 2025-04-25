@@ -1,16 +1,22 @@
 import Canvas from "../models/canvasModel.js";
+import User from "../models/User.js";
+import mongoose from "mongoose";
+
 export const getUserCanvases = async (req, res) => {
     try {
         const userId = req.user.id;
         const canvases = await Canvas.find({
             $or: [{ owner: userId }, { shared: userId }]
-        }, 'name').sort({ createdAt: -1 });
+        })
+        .sort({ createdAt: -1 })
+        .populate('owner', 'name'); // Only get the owner's name
+
         res.json(canvases);
-    }
-    catch (e) {
+    } catch (e) {
         res.status(500).json({ error: "Failed to fetch canvases", details: e.message });
     }
 }
+
 export const loadCanvas = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -100,3 +106,39 @@ export const deleteCanvas = async (req, res) => {
         res.status(500).json({ error: "Failed to delete canvas", details: error.message });
     }
 }
+export const shareCanvas = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const canvasId = req.params.id;
+        const userToShare = await User.findOne({ email });
+
+        if (!userToShare) {
+            return res.status(404).json({ error: "User with this email not found" });
+        }
+
+        const userId = req.user.id;
+        const canvas = await Canvas.findById(canvasId);
+
+        if (!canvas || canvas.owner.toString() !== userId) {
+            return res.status(403).json({ error: "Only owner can add to the canvas" });
+        }
+
+        const sharedUserId = userToShare._id;
+
+        if (canvas.owner.toString() === sharedUserId.toString()) {
+            return res.status(400).json({ error: "Owner cannot add themself to Shared List" });
+        }
+
+        if (canvas.shared.some(id => id.toString() === sharedUserId.toString())) {
+            return res.status(400).json({ error: "Already shared with the user" });
+        }
+
+        canvas.shared.push(sharedUserId);
+        await canvas.save();
+
+        res.json({ message: "Canvas shared successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ error: "Error occurred while sharing the canvas" });
+    }
+};

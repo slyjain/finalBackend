@@ -1,3 +1,4 @@
+// import {io} from "socket.io-client"
 const API_BASE_URL = "http://localhost:8000/api/canvas";
 
 // Accept token and canvasId as arguments
@@ -25,3 +26,6 @@ export const updateCanvas = async (canvasId, elements, token) => {
         console.error("Error updating canvas:", error);
     }
 };
+
+
+

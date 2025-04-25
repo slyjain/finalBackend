@@ -1,44 +1,46 @@
 import { useContext, useEffect, useRef, useLayoutEffect } from "react";
 import rough from "roughjs";
-import { TOOL_ACTION_TYPES, TOOL_ITEMS } from "../../constants"
+import { TOOL_ACTION_TYPES, TOOL_ITEMS } from "../../constants";
 import toolboxContext from "../../store/toolbox-context";
 import boardContext from "../../store/board-context";
 import { updateCanvas } from "../../utils/api";
 import { AuthContext } from "../../store/authProvider";
+import { socket } from "../../socket"; // Make sure socket is properly initialized and exported
 
 function Board() {
-    const canvasRef = useRef();
-    const textAreaRef = useRef();
+    const canvasRef = useRef(null);
+    const textAreaRef = useRef(null);
     const { elements, boardMouseDownHandler, boardMouseMoveHandler, boardMouseUpHandler, toolActionType, textAreaBlurHandler, undo, redo } = useContext(boardContext);
     const { toolboxState } = useContext(toolboxContext);
-    const { token} = useContext(AuthContext);
+    const { token } = useContext(AuthContext);
+
     useLayoutEffect(() => {
         const canvas = canvasRef.current;
-        // const context = canvas.getContext("2d");
-        // const roughCanvas = rough.canvas(canvas);
-
+        if (!canvas) return;
+        // Init logic if needed
     }, []);
+
     useEffect(() => {
-        function handleKeyDown(event) {
+        const handleKeyDown = (event) => {
             if (event.ctrlKey && event.key === "z") {
                 undo();
             } else if (event.ctrlKey && event.key === "y") {
                 redo();
             }
-        }
+        };
 
         document.addEventListener("keydown", handleKeyDown);
-
-        return () => {
-            document.removeEventListener("keydown", handleKeyDown);
-        };
+        return () => document.removeEventListener("keydown", handleKeyDown);
     }, [undo, redo]);
+
     useEffect(() => {
         const canvas = canvasRef.current;
-        const context = canvas.getContext("2d");
-        context.save();
+        if (!canvas) return;
 
+        const context = canvas.getContext("2d");
+        context.clearRect(0, 0, canvas.width, canvas.height);
         const roughCanvas = rough.canvas(canvas);
+
         elements.forEach((element) => {
             switch (element.type) {
                 case TOOL_ITEMS.LINE:
@@ -50,58 +52,55 @@ function Board() {
                 case TOOL_ITEMS.BRUSH:
                     context.fillStyle = element.stroke;
                     context.fill(element.path);
-                    context.restore();
                     break;
                 case TOOL_ITEMS.TEXT:
                     context.textBaseline = "top";
-                    context.font = `${element.size}px Caveat`;
+                    context.font = `${element.size || 20}px 'Caveat', cursive`;
                     context.fillStyle = element.stroke;
                     context.fillText(element.text, element.x1, element.y1);
-                    context.restore();
                     break;
                 default:
-                    throw new Error("Type not recognized");
+                    console.warn("Unrecognized element type:", element.type);
             }
         });
-        return () => {
-            context.clearRect(0, 0, canvas.width, canvas.height);
-        };
     }, [elements]);
+
     useEffect(() => {
-        const textarea = textAreaRef.current;
-        if (toolActionType === TOOL_ACTION_TYPES.WRITING) {
-            setTimeout(() => {
-                textarea.focus();
-            }, 0);
+        if (toolActionType === TOOL_ACTION_TYPES.WRITING && textAreaRef.current) {
+            setTimeout(() => textAreaRef.current.focus(), 0);
         }
     }, [toolActionType]);
+
     const handleBoardMouseDown = (event) => {
         boardMouseDownHandler(event, toolboxState);
     };
+
     const handleBoardMouseUp = (event) => {
-        const canvasId=localStorage.getItem("canvasId")
-        console.log(token,canvasId)
-        updateCanvas(canvasId, elements, token);
         boardMouseUpHandler();
-    }
+        const canvasId = localStorage.getItem("canvasId");
+        if (canvasId && elements.length) {
+            socket.emit("drawingUpdate", { canvasId, elements });
+            // updateCanvas(canvasId, elements, token); // If using HTTP fallback
+        }
+    };
+
     const handleBoardMouseMove = (event) => {
-        // if (toolActionType == TOOL_ACTION_TYPES.DRAWING) {
         boardMouseMoveHandler(event);
-        // }
-    }
+    };
+
+    const lastElement = elements[elements.length - 1];
+
     return (
         <>
-            {toolActionType === TOOL_ACTION_TYPES.WRITING && (
+            {toolActionType === TOOL_ACTION_TYPES.WRITING && lastElement && (
                 <textarea
-                    type="text"
                     ref={textAreaRef}
-                    className="fixed border-none bg-transparent resize-none outline-none p-0 m-0 w-auto h-auto overflow-hidden text-inherit font-[inherit] text-[inherit] leading-[inherit] font-caveat"
-
+                    className="fixed border-none bg-transparent resize-none outline-none p-0 m-0 w-auto h-auto overflow-hidden text-inherit font-caveat"
                     style={{
-                        top: elements[elements.length - 1].y1,
-                        left: elements[elements.length - 1].x1,
-                        fontSize: `${elements[elements.length - 1]?.size}px`,
-                        color: elements[elements.length - 1]?.stroke,
+                        top: lastElement.y1,
+                        left: lastElement.x1,
+                        fontSize: `${lastElement.size || 20}px`,
+                        color: lastElement.stroke,
                     }}
                     onBlur={(event) => textAreaBlurHandler(event.target.value)}
                 />
@@ -119,5 +118,6 @@ function Board() {
         </>
     );
 }
+
 export const useBoard = () => useContext(boardContext);
 export default Board;

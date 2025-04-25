@@ -7,13 +7,17 @@ export default function SignIn() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: ''
+    email: 'guest@gmail.com',
+    password: "1234"
   });
 
   const toggleMode = () => {
     setIsRegistering(!isRegistering);
-    setFormData({ name: '', email: '', password: '' });
+    setFormData({
+      name: '',
+      email: isRegistering ? 'guest@gmail.com' : '',
+      password: isRegistering ? "1234" : ''
+    });
   };
 
   const handleChange = (e) => {

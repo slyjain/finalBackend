@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../../store/authProvider";
-import Board, { useBoard } from "../Board";
+import Board from "../Board";
 import Toolbar from "../Toolbar";
 import BoardProvider from "../../store/BoardProvider";
 import ToolboxProvider from "../../store/ToolboxProvider";
@@ -10,9 +10,10 @@ import axios from "axios";
 
 import { getSvgPathFromStroke } from "../../utils/element";
 import getStroke from "perfect-freehand";
+import { socket } from "../../socket";
 
 const rehydrateElements = (elements) => {
-  return elements.map(el => {
+  return elements.map((el) => {
     if (el.type === "BRUSH") {
       const path = new Path2D(getSvgPathFromStroke(getStroke(el.points)));
       return { ...el, path };
@@ -22,78 +23,76 @@ const rehydrateElements = (elements) => {
 };
 
 function CanvasPage() {
-    const { canvasId } = useParams();
-    const [canvas, setCanvas] = useState({});
-    const { token } = useContext(AuthContext);
+  const { canvasId } = useParams();
+  const [canvas, setCanvas] = useState({});
+  const { token } = useContext(AuthContext);
 
-    useEffect(() => {
-        const fetchCanvas = async () => {
-            try {
-                const response = await axios.get(`http://localhost:8000/api/canvas/load/${canvasId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setCanvas({
-                    ...response.data,
-                    elements: rehydrateElements(response.data.elements)
-                  });
-                  
-                console.log(response.data.elements)
-                console.log(canvas);
-            } catch (error) {
-                console.error("Failed to load Canvas", error);
-            }
-        };
+  useEffect(() => {
+    if (!canvasId || !token) return;
 
-        if (canvasId && token) {
-            fetchCanvas();
-        }
-    }, [canvasId, token]);
+    const fetchCanvas = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8000/api/canvas/load/${canvasId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-    // useEffect(() => {
+        const initialElements = rehydrateElements(response.data.elements);
+        setCanvas({ ...response.data, elements: initialElements });
 
-    //     if (!canvas?._id || !elements || !token) return;
+        // Send token for socket auth
+        socket.auth = { token };
+        socket.connect();
 
-    //     const updateCanvas = async () => {
-    //         try {
-    //             console.log("Update canvas called")
-    //             await axios.put(
-    //                 "http://localhost:8000/api/canvas/update",
-    //                 {
-    //                     canvasId: canvas._id,
-    //                     elements: elements,
-    //                 },
-    //                 {
-    //                     headers: { Authorization: `Bearer ${token}` },
-    //                 }
-    //             );
-    //             console.log("Canvas updated");
-    //         } catch (error) {
-    //             console.error("Canvas update failed", error);
-    //         }
-    //     };
+        socket.emit("joinCanvas", { canvasId });
 
-    //     const debounce = setTimeout(updateCanvas, 1000);
-    //     return () => clearTimeout(debounce);
-    // }, [elements]);
+        // Clear previous listeners (to avoid stacking)
+        socket.off("loadCanvas");
+        socket.off("receiveDrawingUpdate");
 
+        socket.on("loadCanvas", (elements) => {
+          setCanvas((prev) => ({
+            ...prev,
+            elements: rehydrateElements(elements),
+          }));
+        });
 
-    if (!canvas?.elements) {
-        return <p className="text-center mt-10 text-gray-500">Loading...</p>;
+        socket.on("receiveDrawingUpdate", (updatedElements) => {
+          setCanvas((prev) => ({
+            ...prev,
+            elements: rehydrateElements(updatedElements),
+          }));
+        });
+
+      } catch (error) {
+        console.error("Failed to load Canvas", error);
       }
-      
-      return (
-        <div>
-          <BoardProvider initialElements={canvas.elements}>
-            <ToolboxProvider>
-              <Toolbar />
-              <Toolbox />
-              <Board />
-            </ToolboxProvider>
-          </BoardProvider>
-        </div>
-      );
-      
-      
+    };
+
+    fetchCanvas();
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [canvasId, token]);
+
+  if (!canvas?.elements) {
+    return <p className="text-center mt-10 text-gray-500">Loading...</p>;
+  }
+
+  return (
+    <div>
+      <BoardProvider initialElements={canvas.elements}>
+        <ToolboxProvider>
+          <Toolbar />
+          <Toolbox />
+          <Board />
+        </ToolboxProvider>
+      </BoardProvider>
+    </div>
+  );
 }
 
 export default CanvasPage;
